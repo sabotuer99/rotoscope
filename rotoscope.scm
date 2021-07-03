@@ -149,6 +149,7 @@
             ; define the variables
             (image (car (gimp-file-load RUN-NONINTERACTIVE filename filename)))
             (background (car (gimp-image-get-active-layer image)))
+            (highlights (car (gimp-layer-copy background TRUE)))
             (foreground (car (gimp-layer-copy background TRUE)))
             (hatch1 (car (new-layer-same-size image background)))
             (hatch2 (car (new-layer-same-size image background)))
@@ -158,6 +159,30 @@
         (gimp-image-insert-layer image foreground 0 -1)
         (gimp-image-insert-layer image hatch1 0 -1)
         (gimp-image-insert-layer image hatch2 0 -1)
+        (gimp-image-insert-layer image highlights 0 -1)
+
+
+        ; initialize the hatch layers
+        ;   fill with plasma noise
+        ;   for some reason GEGL won't fill layer, so set active and trim
+        ;   ... then resize to match image again
+        ;   newsprint distort @ 45 degrees
+        ;   mirror to second hatch layer
+        (generate-hatching
+            image
+            hatch1
+            background
+            125
+            0.25)
+        (set! hatch1 (car (gimp-image-get-active-layer image)))
+
+        (generate-hatching
+            image
+            hatch2
+            background
+            55
+            0.4)
+        (set! hatch2 (car (gimp-image-get-active-layer image)))
 
         ; create the background color with a wide oilify plus waterpixel
         ; then oilify again to smooth out the edges 
@@ -169,14 +194,42 @@
             1)
         (gegl-gegl
             background
-            "waterpixels size=64")
+            "waterpixels size=128")
         (plug-in-oilify
             RUN-NONINTERACTIVE
             image ; unused
             background
-            12
+            24
             1)
 
+        ; create the highlight layer
+        ; desaturate
+        ; guassian blur 3
+        ; posterize 7
+        ; colortoalpha black .75 alpha threshold
+        (gimp-drawable-desaturate
+            highlights
+            1)
+        (plug-in-gauss
+            RUN-NONINTERACTIVE
+            image ; unused 
+            highlights
+            3.0
+            3.0
+            0)
+        (gimp-drawable-posterize
+            highlights
+            7)
+        (gegl-gegl
+            highlights
+            "color-to-alpha color=rgb(0,0,0) transparency-threshold=0.75")   
+        (plug-in-oilify
+            RUN-NONINTERACTIVE
+            image ; unused
+            highlights
+            8
+            1)
+        
         ; create the foreground:
         ;   oilify size 6 to simplify the image
         ;   edge detect to get the lines
@@ -212,28 +265,6 @@
             image ; unused 
             foreground
             '(255 255 255))
-
-        ; initialize the hatch layers
-        ;   fill with plasma noise
-        ;   for some reason GEGL won't fill layer, so set active and trim
-        ;   ... then resize to match image again
-        ;   newsprint distort @ 45 degrees
-        ;   mirror to second hatch layer
-        (generate-hatching
-            image
-            hatch1
-            background
-            125
-            0.25)
-        (set! hatch1 (car (gimp-image-get-active-layer image)))
-    
-        (generate-hatching
-            image
-            hatch2
-            background
-            55
-            0.4)
-        (set! hatch2 (car (gimp-image-get-active-layer image)))
 
         (gimp-image-raise-item-to-top image foreground)
 
