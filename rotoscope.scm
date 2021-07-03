@@ -123,13 +123,6 @@
                 5.5
                 0)
 
-            (gimp-file-save 
-            RUN-NONINTERACTIVE 
-            image 
-            mask 
-            "buffer.png"
-            "buffer.png")
-
             (gimp-image-raise-item-to-top image drawable)
             (gimp-image-raise-item-to-top image mask)
             (gimp-image-set-active-layer image (car (gimp-image-merge-down image mask 1)))
@@ -213,6 +206,7 @@
             2)
         (gimp-invert 
             foreground)
+
         (plug-in-colortoalpha
             RUN-NONINTERACTIVE
             image ; unused 
@@ -243,53 +237,11 @@
 
         (gimp-image-raise-item-to-top image foreground)
 
-        (gimp-file-save 
-            RUN-NONINTERACTIVE 
-            image 
-            background 
-            "background.png" 
-            "background.png")
-
-        (gimp-file-save 
-            RUN-NONINTERACTIVE 
-            image 
-            foreground 
-            "foreground.png" 
-            "foreground.png")
-
-        (gimp-file-save 
-            RUN-NONINTERACTIVE 
-            image 
-            hatch1 
-            "hatch1.png" 
-            "hatch1.png")
-
-        (gimp-file-save 
-            RUN-NONINTERACTIVE 
-            image 
-            hatch2 
-            "hatch2.png" 
-            "hatch2.png")
-
 
         (let* (
                 (new_image (car (gimp-image-duplicate image)))
                 (drawable (car (gimp-image-merge-visible-layers new_image 1)))
             )
-
-            ;(gimp-image-insert-layer new_image (car (gimp-layer-copy background TRUE)) 0 -1)
-            ;(gimp-image-insert-layer new_image (car (gimp-layer-copy hatch1 TRUE)) 0 -1)
-            ;(gimp-image-insert-layer new_image (car (gimp-layer-copy hatch2 TRUE)) 0 -1)
-            ;(gimp-image-insert-layer new_image (car (gimp-layer-copy foreground TRUE)) 0 -1)
-
-           ; (gimp-edit-copy background)
-           ; (gimp-edit-paste drawable TRUE)
-           ; (gimp-edit-copy hatch1)
-           ; (gimp-edit-paste drawable TRUE)
-           ; (gimp-edit-copy hatch2)
-           ; (gimp-edit-paste drawable TRUE)
-           ; (gimp-edit-copy foreground)
-           ; (gimp-edit-paste drawable TRUE)
 
             (gimp-file-save 
                 RUN-NONINTERACTIVE 
