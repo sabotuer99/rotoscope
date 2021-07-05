@@ -149,18 +149,53 @@
             ; define the variables
             (image (car (gimp-file-load RUN-NONINTERACTIVE filename filename)))
             (background (car (gimp-image-get-active-layer image)))
-            (highlights (car (gimp-layer-copy background TRUE)))
-            (foreground (car (gimp-layer-copy background TRUE)))
+            (highlights 0)
+            (foreground 0)
             (hatch1 (car (new-layer-same-size image background)))
             (hatch2 (car (new-layer-same-size image background)))
         )
 
         ; insert the layers into the image
-        (gimp-image-insert-layer image foreground 0 -1)
         (gimp-image-insert-layer image hatch1 0 -1)
         (gimp-image-insert-layer image hatch2 0 -1)
+
+        ; normalize, white-balance, and color enhance before proceeding 
+        (gimp-drawable-equalize
+            background
+            TRUE)
+        (gimp-drawable-levels-stretch
+            background)
+        (gegl-gegl
+            background
+            "color-enhance")
+        (plug-in-gauss
+            RUN-NONINTERACTIVE
+            image ; unused 
+            background
+            1.5
+            1.5
+            0)
+
+        ;(plug-in-oilify
+        ;    RUN-NONINTERACTIVE
+        ;    image ; unused
+        ;    background
+        ;    8
+        ;    0)
+
+
+        (set! highlights (car (gimp-layer-copy background TRUE)))
         (gimp-image-insert-layer image highlights 0 -1)
 
+        (set! foreground (car (gimp-layer-copy background TRUE)))
+        (gimp-image-insert-layer image foreground 0 -1)
+
+        ;(gimp-file-save 
+        ;    RUN-NONINTERACTIVE 
+        ;    image 
+        ;    background 
+        ;    "background.png" 
+        ;    "background.png" )
 
         ; initialize the hatch layers
         ;   fill with plasma noise
@@ -186,21 +221,35 @@
 
         ; create the background color with a wide oilify plus waterpixel
         ; then oilify again to smooth out the edges 
+        ;(plug-in-oilify
+        ;    RUN-NONINTERACTIVE
+        ;    image ; unused
+        ;    background
+        ;    12
+        ;    1)
+        ;(gegl-gegl
+        ;    background
+        ;    "waterpixels size=128")
+        (plug-in-gauss
+            RUN-NONINTERACTIVE
+            image ; unused 
+            background
+            12.0
+            12.0
+            0)        
         (plug-in-oilify
             RUN-NONINTERACTIVE
             image ; unused
             background
-            12
+            20
             1)
-        (gegl-gegl
-            background
-            "waterpixels size=128")
-        (plug-in-oilify
+        (plug-in-gauss
             RUN-NONINTERACTIVE
-            image ; unused
+            image ; unused 
             background
-            24
-            1)
+            12.0
+            12.0
+            0) 
 
         ; create the highlight layer
         ; desaturate
@@ -259,6 +308,16 @@
             2)
         (gimp-invert 
             foreground)
+        (plug-in-erode
+            RUN-NONINTERACTIVE
+            image ; unused
+            foreground
+            1
+            0
+            0
+            0
+            0
+            0)
 
         (plug-in-colortoalpha
             RUN-NONINTERACTIVE
